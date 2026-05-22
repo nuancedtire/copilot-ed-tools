@@ -26,7 +26,7 @@ Both prompts are engineered by an experienced ED registrar to be:
 
 1. **Download or clone** this repository:
    ```bash
-   git clone https://github.com/yourusername/copilot-ed-tools.git
+   git clone https://github.com/nuancedtire/copilot-ed-tools.git
    ```
 
 2. **Open Chrome** and navigate to `chrome://extensions/`
@@ -36,6 +36,17 @@ Both prompts are engineered by an experienced ED registrar to be:
 4. Click **Load unpacked** and select the `copilot-ed-tools` folder
 
 5. Open [Microsoft Copilot](https://copilot.cloud.microsoft) or [M365 Chat](https://m365.cloud.microsoft) — the ED Tools button will appear near the input area
+
+---
+
+## Releases
+
+The easiest way to install is to download the latest release:
+
+1. Go to the [**Releases** page](https://github.com/nuancedtire/copilot-ed-tools/releases)
+2. Download the latest `copilot-ed-tools-vX.Y.Z.zip`
+3. Unzip the file
+4. Follow steps 2–5 above to load it in Chrome/Edge
 
 ---
 

@@ -1,0 +1,67 @@
+# Agent Instructions
+
+This file contains context and conventions for AI agents working on the Copilot ED Tools project.
+
+## Project Overview
+
+Copilot ED Tools is a lightweight browser extension (Chrome/Edge Manifest V3) that injects clinical documentation prompts into Microsoft Copilot. It is built for NHS Emergency Department clinicians.
+
+## Tech Stack
+
+- **Manifest Version:** 3 (MV3)
+- **Languages:** Vanilla JavaScript, CSS, JSON
+- **No build step:** This is a plain extension. No bundler, no transpiler, no package manager.
+- **Browser targets:** Chrome, Edge
+
+## Project Structure
+
+```
+copilot-ed-tools/
+├── manifest.json          # Extension manifest (MV3). Source of truth for version.
+├── content.js             # UI injection, popover logic, send-button interaction
+├── prompts.js             # Clinical prompt definitions exported on window object
+├── styles.css             # Popover and button styling (warm terracotta theme)
+├── icons/                 # Extension icons (PNG) and source SVG
+│   ├── icon.svg
+│   ├── icon-16.png
+│   ├── icon-32.png
+│   ├── icon-48.png
+│   └── icon-128.png
+├── .github/workflows/      # CI/CD automation
+│   └── release.yml        # Packages extension zip on version tag push
+├── README.md              # Human-facing documentation
+├── CHANGELOG.md           # Release history
+├── LICENSE                # MIT License
+└── .gitignore             # Excludes OS/IDE files, build outputs, node_modules
+```
+
+## Coding Conventions
+
+- **JavaScript:** IIFE pattern, strict mode, no external runtime dependencies.
+- **CSS:** Utility-first naming inside popover (`ed-` prefix), warm clinical palette.
+- **Prompts:** Stored as plain JavaScript template strings in `prompts.js`. Keep clinical accuracy. Do not abbreviate medical standards unless using NHS standard abbreviations.
+- **Manifest:** When changing `manifest.json`, ensure `version` follows semver. Icon sizes must remain 16, 32, 48, 128.
+
+## Release Workflow
+
+1. Update `manifest.json` version and `CHANGELOG.md`.
+2. Commit the changes.
+3. Create and push a Git tag: `git tag vX.Y.Z && git push origin vX.Y.Z`
+4. GitHub Actions will:
+   - Package the extension files into `copilot-ed-tools-vX.Y.Z.zip`
+   - Create a GitHub Release and attach the zip
+
+## Testing (Manual)
+
+There is no automated test suite. Test by:
+1. Loading the extension unpacked in `chrome://extensions/`
+2. Visiting `https://copilot.cloud.microsoft` or `https://m365.cloud.microsoft`
+3. Verifying the ED Tools button appears near the chat input
+4. Clicking each command and confirming the prompt is inserted and sent
+
+## Notes for Agents
+
+- Do not add a build step or bundler without explicit user approval.
+- Do not modify clinical prompt content unless specifically asked — accuracy is safety-critical.
+- Keep the extension lightweight; avoid adding heavy dependencies.
+- When updating icons, regenerate all PNG sizes from the source SVG.
