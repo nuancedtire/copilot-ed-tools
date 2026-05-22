@@ -116,6 +116,26 @@ The prompts in `prompts.js` are plain JavaScript strings. You can:
 
 ---
 
+## Contributing
+
+Development happens on feature branches. Pull requests are required to merge into `main`.
+
+### For code changes
+
+1. Create a branch: `git checkout -b feature/my-change`
+2. Make changes and test manually in Chrome/Edge
+3. Push and open a Pull Request
+4. After merge, run `./scripts/bump-version.sh X.Y.Z` to release
+
+### For docs/maintenance
+
+1. Create a branch: `git checkout -b fix/typo-in-readme`
+2. Make changes (no version bump needed)
+3. Push and open a Pull Request
+4. Merge — no release is triggered
+
+---
+
 ## Safety & Disclaimer
 
 This extension is a **clinical documentation aid**, not a decision-support or diagnostic tool. It does not:

@@ -1,0 +1,80 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate manifest.json
+        run: |
+          node -e "
+            const fs = require('fs');
+            const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+            const required = ['manifest_version', 'name', 'version', 'description'];
+            for (const field of required) {
+              if (!manifest[field]) throw new Error('Missing field: ' + field);
+            }
+            if (!/^\d+\.\d+\.\d+$/.test(manifest.version)) {
+              throw new Error('Invalid semver version: ' + manifest.version);
+            }
+            console.log('manifest.json is valid. Version:', manifest.version);
+          "
+
+      - name: Check icons exist
+        run: |
+          for size in 16 32 48 128; do
+            if [ ! -f "icons/icon-${size}.png" ]; then
+              echo "Missing icon: icons/icon-${size}.png"
+              exit 1
+            fi
+          done
+          if [ ! -f "icons/icon.svg" ]; then
+            echo "Missing source icon: icons/icon.svg"
+            exit 1
+          fi
+          echo "All icons present."
+
+  lint-js:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check content.js
+          node --check prompts.js
+          echo "JavaScript syntax OK."
+
+  check-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check CHANGELOG entry for version bump
+        run: |
+          # Only enforce if manifest.json was changed in this PR
+          git diff --name-only origin/main..HEAD | grep -q "manifest.json" || {
+            echo "manifest.json not changed. Skipping CHANGELOG check."
+            exit 0
+          }
+
+          VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('manifest.json')).version)")
+          echo "manifest.json version: $VERSION"
+
+          if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            echo "ERROR: CHANGELOG.md is missing an entry for version $VERSION"
+            echo "Please add a '## [$VERSION] - YYYY-MM-DD' section to CHANGELOG.md"
+            exit 1
+          fi
+
+          echo "CHANGELOG entry found for v$VERSION."
