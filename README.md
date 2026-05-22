@@ -20,33 +20,50 @@ Both prompts are engineered by an experienced ED registrar to be:
 
 ---
 
-## Installation
+## Installation (Recommended: From Release)
 
-### Chrome / Edge (Manifest V3)
+The easiest and most reliable way to install is from the latest GitHub release.
 
-1. **Download or clone** this repository:
+### Step-by-step
+
+1. **Go to the Releases page**
+   
+   Visit [**https://github.com/nuancedtire/copilot-ed-tools/releases**](https://github.com/nuancedtire/copilot-ed-tools/releases)
+
+2. **Download the latest zip**
+   
+   Find the most recent release (e.g., `v0.1.0`) and click `copilot-ed-tools-vX.Y.Z.zip` under **Assets** to download it.
+
+3. **Unzip the file**
+   
+   Extract the zip to a folder on your computer (e.g., `~/Downloads/copilot-ed-tools-v0.1.0`).
+
+4. **Load the extension in Chrome or Edge**
+   
+   - Open Chrome or Edge and navigate to `chrome://extensions/` (or `edge://extensions/`)
+   - **Enable Developer Mode** using the toggle in the top right corner
+   - Click **Load unpacked**
+   - Select the unzipped folder you extracted in Step 3
+   - The extension should now appear in your extensions list with the Copilot ED Tools icon
+
+5. **Open Microsoft Copilot**
+   
+   Visit [https://copilot.cloud.microsoft](https://copilot.cloud.microsoft) or [https://m365.cloud.microsoft](https://m365.cloud.microsoft) and log in.
+   
+   The **ED Tools** button will appear near the chat input area.
+
+---
+
+## Installation (From Source — for Developers)
+
+If you want to run the very latest code or contribute:
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/nuancedtire/copilot-ed-tools.git
    ```
 
-2. **Open Chrome** and navigate to `chrome://extensions/`
-
-3. **Enable Developer Mode** (toggle in the top right)
-
-4. Click **Load unpacked** and select the `copilot-ed-tools` folder
-
-5. Open [Microsoft Copilot](https://copilot.cloud.microsoft) or [M365 Chat](https://m365.cloud.microsoft) — the ED Tools button will appear near the input area
-
----
-
-## Releases
-
-The easiest way to install is to download the latest release:
-
-1. Go to the [**Releases** page](https://github.com/nuancedtire/copilot-ed-tools/releases)
-2. Download the latest `copilot-ed-tools-vX.Y.Z.zip`
-3. Unzip the file
-4. Follow steps 2–5 above to load it in Chrome/Edge
+2. Follow steps 4–5 above to load the extension unpacked from the cloned folder.
 
 ---
 
@@ -54,16 +71,25 @@ The easiest way to install is to download the latest release:
 
 ```
 copilot-ed-tools/
-├── manifest.json      # Extension manifest (MV3)
-├── prompts.js         # Clinical prompt definitions
-├── content.js         # UI injection and interaction logic
-├── styles.css         # Popover styling
-└── README.md          # This file
+├── manifest.json          # Extension manifest (MV3)
+├── prompts.js             # Clinical prompt definitions
+├── content.js             # UI injection and interaction logic
+├── styles.css             # Popover styling
+├── icons/                 # Extension icons (16/32/48/128px PNG + SVG)
+├── .github/workflows/     # CI/CD automation
+│   ├── release.yml        # Creates GitHub Release on version tag push
+│   └── pr-check.yml       # Validates every Pull Request
+├── scripts/
+│   └── bump-version.sh    # One-command version bump + AI changelog + tag
+├── README.md              # This file
+├── CHANGELOG.md           # Release history
+├── AGENTS.md              # Agent/developer documentation
+└── LICENSE                # MIT License
 ```
 
 ### Files explained
 
-- **`manifest.json`** — Defines the extension: permissions, host matches, and injected assets
+- **`manifest.json`** — Defines the extension: permissions, host matches, icons, and injected assets. **Source of truth for version.**
 - **`prompts.js`** — Contains the full clinical prompt templates. This is the brain of the extension. Prompts cover:
   - Phase 1: Safety interrogation with presentation-specific questions
   - Phase 2: Structured clerking/discharge output
@@ -71,6 +97,7 @@ copilot-ed-tools/
   - Safety checks, edge cases, and writing rules
 - **`content.js`** — Injects the ED Tools button, handles the popover UI, and pipes prompts into Copilot's input field
 - **`styles.css`** — Soft, clinical-inspired popover design using warm terracotta tones
+- **`icons/`** — Extension icons at all required MV3 sizes plus source SVG. Regenerate all PNGs from `icon.svg` if you update the logo.
 
 ---
 
@@ -120,17 +147,28 @@ The prompts in `prompts.js` are plain JavaScript strings. You can:
 
 Development happens on feature branches. Pull requests are required to merge into `main`.
 
-### For code changes
+### Branch protection rules
+
+- `main` is protected: you must open a Pull Request to merge
+- PRs must pass automated checks (`validate`, `lint-js`, `check-changelog`)
+- As a solo maintainer, you can merge your own PRs (self-approvals allowed)
+
+### For code changes (triggers a release)
 
 1. Create a branch: `git checkout -b feature/my-change`
 2. Make changes and test manually in Chrome/Edge
 3. Push and open a Pull Request
-4. After merge, run `./scripts/bump-version.sh X.Y.Z` to release
+4. After merge, run the helper script:
+   ```bash
+   ./scripts/bump-version.sh 0.2.0
+   ```
+   This auto-generates a changelog entry (via AI), commits, creates the tag, and pushes.
+5. The existing GitHub Actions `release.yml` workflow sees the tag and creates the Release automatically
 
-### For docs/maintenance
+### For docs/maintenance (no release)
 
 1. Create a branch: `git checkout -b fix/typo-in-readme`
-2. Make changes (no version bump needed)
+2. Make changes (do **not** bump the version in `manifest.json`)
 3. Push and open a Pull Request
 4. Merge — no release is triggered
 
