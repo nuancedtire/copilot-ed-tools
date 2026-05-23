@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Copilot ED Tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ED documentation assistant for Copilot",
   "icons": {
     "16": "icons/icon-16.png",
@@ -12,7 +12,8 @@
   "permissions": ["storage"],
   "host_permissions": [
     "https://m365.cloud.microsoft/*",
-    "https://copilot.cloud.microsoft/*"
+    "https://copilot.cloud.microsoft/*",
+    "https://api.github.com/*"
   ],
   "content_scripts": [
     {

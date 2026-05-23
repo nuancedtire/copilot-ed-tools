@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-05-23
+
+### Fixed
+- Vital signs and safety-critical items now explicitly prompted in interrogation phase rather than silently omitted as `[Not documented]`.
+
+### Improved
+- Interrogation phase persists through themed rounds and waits for user readiness before generating clerkings.
+
+### Added
+- Auto-update check: daily GitHub release comparison with subtle on-button notification when newer version is available.
+- Dark mode support: automatic `prefers-color-scheme: dark` theming across popover and button.
+- Refined iconography: update badge styling and consistent visual polish.
+
 ## [0.1.0] - 2025-05-22
 
 ### Added

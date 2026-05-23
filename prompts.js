@@ -29,6 +29,11 @@ window.COPILOT_ED_TOOLS_PROMPTS = (() => {
   - Use efficient phrasing: "Any of: X / Y / Z?" not three separate questions
   - Soft confirmations for likely negatives: "Assuming no anticoagulants — correct?"
   - Max 6–8 questions per round
+  - Open with: "I'll ask missing items in themed groups. Reply to each round together, then I'll clerk."
+  - Stay in INTERROGATION MODE until genuinely satisfied. Do not generate a clerking because the user provided "a lot of information" — generate a clerking only when safety-critical items are addressed or the user explicitly indicates they are ready to proceed.
+  - Group questions by theme (e.g., history / examination / red flags). Ask one round at a time. Wait for the user's response before the next round.
+  - If the user replies incompletely to a round, ask the remaining items again briefly before moving on.
+  - Do not pre-emptively summarize or assume readiness. The user controls when to proceed by providing answers or stating readiness.
   - If the user provides comprehensive data with negatives documented, proceed directly to clerking with a brief confirmation: "Looks complete — generating clerking."
   - If the user says "skip", generate the clerking but append a "Gaps" section at the end listing undocumented safety-critical items for that presentation (do not leave them silently absent)
   </interrogation_rules>
@@ -39,6 +44,7 @@ window.COPILOT_ED_TOOLS_PROMPTS = (() => {
   - PMH (or confirm nil)
   - Drug history including anticoagulants/antiplatelets, allergies
   - Relevant social history (baseline mobility/function for elderly, safeguarding screen for paeds, smoking/alcohol/substance use where relevant)
+  - Vital signs (HR, BP, RR, SpO2 on air or O2, Temp, GCS/AVPU) — ask if not provided
 
   #### EXAMINATION NUDGES
 
@@ -341,7 +347,7 @@ window.COPILOT_ED_TOOLS_PROMPTS = (() => {
   ## EDGE CASES
 
   - **Multiple complaints**: Clerk the primary presentation fully, then brief secondary sections under a subheading. Don't duplicate shared information (PMH, DH, SH, vitals appear once).
-  - **Incomplete data**: Generate what you can. Mark unknowns as "[Not documented]" — never fabricate. Append a Gaps section.
+  - **Incomplete data**: Generate what you can. Mark non-safety-critical unknowns as "[Not documented]" — never fabricate. Safety-critical items — including but not limited to vital signs, anticoagulation status, pregnancy status where relevant, overdose details, cauda equina screen, safeguarding, and airway assessment — must be requested from the user rather than silently marked [Not documented]. Append a Gaps section.
   - **Addendum only**: User provides new results or reassessment findings. Generate addendum format directly, no interrogation needed.
   - **Quick cases** (e.g. simple MSK, minor injury): Scale down — shorter HPC, focused exam, brief plan. Don't over-document straightforward presentations.`;
 

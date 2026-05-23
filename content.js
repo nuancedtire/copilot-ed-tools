@@ -4,10 +4,67 @@
   const PROMPTS = window.COPILOT_ED_TOOLS_PROMPTS;
 
   let isRunning = false;
+  let updateAvailable = false;
 
   function init() {
     injectFonts();
     injectButton();
+    checkForUpdates();
+  }
+
+  async function checkForUpdates() {
+    try {
+      const now = Date.now();
+      const stored = await chrome.storage.local.get(['lastUpdateCheck', 'latestVersion', 'updateAvailable']);
+
+      if (stored.lastUpdateCheck && (now - stored.lastUpdateCheck) < 24 * 60 * 60 * 1000) {
+        if (stored.updateAvailable) showUpdateBadge(stored.latestVersion);
+        return;
+      }
+
+      const res = await fetch('https://api.github.com/repos/nuancedtire/copilot-ed-tools/releases/latest');
+      if (!res.ok) return;
+      const data = await res.json();
+      const latest = data.tag_name ? data.tag_name.replace(/^v/, '') : '';
+      const current = chrome.runtime.getManifest().version;
+
+      const hasUpdate = latest && latest !== current && isNewerVersion(latest, current);
+
+      await chrome.storage.local.set({
+        lastUpdateCheck: now,
+        latestVersion: latest,
+        updateAvailable: hasUpdate,
+      });
+
+      if (hasUpdate) showUpdateBadge(latest);
+    } catch (e) {
+      // Silently fail — update check is non-critical
+    }
+  }
+
+  function isNewerVersion(latest, current) {
+    const parse = (v) => v.split('.').map(Number);
+    const l = parse(latest);
+    const c = parse(current);
+    for (let i = 0; i < Math.max(l.length, c.length); i++) {
+      const a = l[i] || 0;
+      const b = c[i] || 0;
+      if (a > b) return true;
+      if (a < b) return false;
+    }
+    return false;
+  }
+
+  function showUpdateBadge(version) {
+    updateAvailable = version;
+    const btn = document.getElementById('ed-tools-btn');
+    if (btn) btn.classList.add('ed-tools-update');
+  }
+
+  function clearUpdateBadge() {
+    updateAvailable = false;
+    const btn = document.getElementById('ed-tools-btn');
+    if (btn) btn.classList.remove('ed-tools-update');
   }
 
   function injectFonts() {
@@ -78,6 +135,10 @@
     const popover = document.createElement("div");
     popover.id = "ed-tools-modal";
 
+    const updateNotice = updateAvailable
+      ? `<div class="ed-update-notice">Update available: <strong>v${updateAvailable}</strong> — <a href="https://github.com/nuancedtire/copilot-ed-tools/releases/latest" target="_blank" rel="noopener">GitHub releases ↗</a></div>`
+      : '';
+
     popover.innerHTML = `
       <div class="ed-modal">
         <button id="ed-tools-close" class="ed-modal-close" aria-label="Close">
@@ -90,9 +151,11 @@
         <div class="ed-modal-header">
           <div>
             <h3 class="ed-modal-title">ED Tools</h3>
-            <p class="ed-modal-subtitle">Clinical documentation assistance</p>
+            <p class="ed-modal-subtitle">Clinical documentation assistance <span class="ed-version">v${chrome.runtime.getManifest().version}</span></p>
           </div>
         </div>
+
+        ${updateNotice}
 
         <div class="ed-commands">
           <button class="ed-command-btn" data-id="clerking">
