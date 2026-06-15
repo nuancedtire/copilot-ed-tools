@@ -532,65 +532,63 @@
      ============================================================ */
 
   function observeForPromptBubble({ promptText, label }) {
-    const container = findMessageListContainer();
-    if (!container) return;
+    const target = normaliseText(promptText);
+    const firstSentence = target.split(/[.!?]/)[0];
+    const maxAttempts = 30;
+    let attempts = 0;
 
-    const timeoutMs = 10000;
-    let timer = null;
-
-    const observer = new MutationObserver(() => {
-      const bubble = findMatchingUserPromptBubble(promptText);
-      if (!bubble) return;
-
-      collapsePromptBubble(bubble, promptText, label);
-      observer.disconnect();
-      if (timer) clearTimeout(timer);
-    });
-
-    observer.observe(container, { childList: true, subtree: true });
-
-    timer = window.setTimeout(() => observer.disconnect(), timeoutMs);
+    const interval = setInterval(() => {
+      const bubble = findMatchingUserPromptBubble(target, firstSentence);
+      if (bubble) {
+        collapsePromptBubble(bubble, promptText, label);
+        clearInterval(interval);
+        return;
+      }
+      attempts++;
+      if (attempts >= maxAttempts) clearInterval(interval);
+    }, 500);
   }
 
-  function findMessageListContainer() {
-    return (
-      document.querySelector('[data-testid*="chat"]') ||
-      document.querySelector('[role="log"]') ||
-      document.querySelector('[aria-live]') ||
-      document.querySelector('main')
-    );
-  }
+  function findMatchingUserPromptBubble(target, firstSentence) {
+    // Strategy 1: common chat message selectors
+    const selectors = [
+      '[role="listitem"]',
+      '[role="article"]',
+      '[role="log"] > div > div',
+      '[data-testid*="chat"] > div > div',
+    ];
 
-  function findMatchingUserPromptBubble(promptText) {
-    const allBubbles = document.querySelectorAll(
-      '[data-testid*="chat"] > div, [role="log"] > div, [role="listitem"]'
-    );
+    for (const sel of selectors) {
+      try {
+        const nodes = document.querySelectorAll(sel);
+        for (const node of nodes) {
+          const txt = normaliseText(node.textContent);
+          if (matchPromptText(txt, target, firstSentence)) return node;
+        }
+      } catch (_) { /* invalid selector — skip */ }
+    }
 
-    for (const bubble of allBubbles) {
-      const textEl = bubble.querySelector("div[class], p, span[class]") || bubble;
-      const bubbleText = textEl.textContent || "";
-      if (isLikelyInjectedPrompt(bubbleText, promptText)) {
-        return bubble;
+    // Strategy 2: broader scan for any element containing enough prompt text
+    const candidates = document.querySelectorAll('div, p, article, li, section');
+    for (const el of candidates) {
+      const txt = normaliseText(el.textContent);
+      if (txt.length < 200) continue;
+      if (matchPromptText(txt, target, firstSentence)) {
+        const parent = el.closest('[role="log"], [role="list"], [data-testid*="chat"], main, [aria-live]');
+        if (parent) return el;
       }
     }
 
-    // Fallback: broader scan for any element with matching text
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_ELEMENT,
-      null,
-      false
-    );
-    let node;
-    while ((node = walker.nextNode())) {
-      const txt = node.textContent || "";
-      if (isLikelyInjectedPrompt(txt, promptText)) {
-        // Ensure it's in a chat-like area (heuristic)
-        const closestChat = node.closest('[data-testid*="chat"], [role="log"], [role="list"]');
-        if (closestChat) return node;
-      }
-    }
     return null;
+  }
+
+  function matchPromptText(text, target, firstSentence) {
+    if (!text || !target) return false;
+    if (text === target) return true;
+    if (text.length >= 200 && target.length >= 200 && text.slice(0, 200) === target.slice(0, 200)) return true;
+    if (text.includes(target.slice(0, 200))) return true;
+    if (firstSentence && text.includes(firstSentence)) return true;
+    return false;
   }
 
   function normaliseText(value) {
@@ -606,7 +604,6 @@
     if (bubble.startsWith(prompt.slice(0, 250))) return true;
     if (bubble.includes(prompt.slice(0, 250))) return true;
 
-    // Fuzzy: if bubble starts with the first sentence of the prompt
     const firstSentence = prompt.split(/[.!?]/)[0];
     if (firstSentence && bubble.includes(firstSentence)) return true;
 
@@ -681,6 +678,35 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  /* ============================================================
+     TEST EXPOSURE
+     ============================================================ */
+
+  if (window.__ED_TOOLS_TEST__) {
+    window.__edTools = {
+      debounce,
+      escapeHtml,
+      normaliseText,
+      isNewerVersion,
+      isLikelyInjectedPrompt,
+      findComposer,
+      findSendButton,
+      _isRunning() { return isRunning; },
+      _reset() {
+        isRunning = false;
+        updateAvailable = false;
+        if (composerObserver) { composerObserver.disconnect(); composerObserver = null; }
+        if (routeObserver) { routeObserver.disconnect(); routeObserver = null; }
+        if (currentPopover) {
+          currentPopover.remove();
+          currentPopover = null;
+        }
+        const container = document.getElementById('ed-tools-container');
+        if (container) container.remove();
+      },
+    };
   }
 
   /* ============================================================
