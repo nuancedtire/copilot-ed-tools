@@ -556,6 +556,8 @@
       '[role="article"]',
       '[role="log"] > div > div',
       '[data-testid*="chat"] > div > div',
+      '[data-testid*="chat"]',
+      '[class*="UserMessage"]',
     ];
 
     for (const sel of selectors) {
@@ -573,10 +575,7 @@
     for (const el of candidates) {
       const txt = normaliseText(el.textContent);
       if (txt.length < 200) continue;
-      if (matchPromptText(txt, target, firstSentence)) {
-        const parent = el.closest('[role="log"], [role="list"], [data-testid*="chat"], main, [aria-live]');
-        if (parent) return el;
-      }
+      if (matchPromptText(txt, target, firstSentence)) return el;
     }
 
     return null;

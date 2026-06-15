@@ -20,6 +20,11 @@ build/
 *.zip
 *.crx
 
+# Test artifacts
+test-results/
+/test-results/
+browser/.astro/
+
 # Environment
 .env
 .env.local
