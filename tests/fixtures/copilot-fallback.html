@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>Copilot Test Fixture - Fallback Mode</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #fafafa;
+    }
+    /* Simple page with NO #m365-chat-input-shared-wrapper and NO contenteditable
+       near the bottom — forces floating FAB fallback */
+    .top-stuff {
+      padding: 40px;
+    }
+    .top-stuff [contenteditable] {
+      border: 1px solid #ccc;
+      padding: 8px;
+      min-height: 30px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-stuff">
+    <h2>Some other page</h2>
+    <p>This page has a contenteditable near the TOP (won't match the "near bottom" heuristic)</p>
+    <div contenteditable="true">I'm at the top, not the bottom</div>
+  </div>
+
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/tests/fixtures/chrome-mock.js"></script>
+  <script>window.__ED_TOOLS_TEST__ = true;</script>
+  <script src="/prompts.js"></script>
+  <script src="/content.js"></script>
+</body>
+</html>

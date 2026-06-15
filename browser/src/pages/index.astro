@@ -1,0 +1,157 @@
+---
+import Layout from '../layouts/Layout.astro';
+import data from '../data/chat-export.json';
+
+const conversations = data.conversations || [];
+const exportedAt = data.exportedAt;
+const totalSidebarItems = data.totalSidebarItems;
+const extracted = data.extracted;
+const patientEncounters = data.patientEncounters;
+const nonPatientChats = data.nonPatientChats;
+---
+
+<Layout>
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h2>🏥 Copilot Chat History</h2>
+      <div id="stats">
+        <strong>{totalSidebarItems}</strong> sidebar items &middot;
+        <strong>{extracted}</strong> conversations<br>
+        <strong>{patientEncounters}</strong> patient encounters &middot;
+        <strong>{nonPatientChats}</strong> non-clinical
+      </div>
+    </div>
+    <div class="filter-bar">
+      <input type="text" id="search" placeholder="Search...">
+      <select id="filter">
+        <option value="all">All</option>
+        <option value="patient">🏥 Patient only</option>
+        <option value="other">💬 Non-patient</option>
+      </select>
+    </div>
+    <div id="conv-list"></div>
+    <div class="export-meta">Exported: {new Date(exportedAt).toLocaleString()}</div>
+  </div>
+
+  <div id="main">
+    <div id="main-header"><h3>Select a conversation</h3></div>
+    <div id="messages"><div id="empty-state">← Select a conversation from the sidebar</div></div>
+  </div>
+</Layout>
+
+<script is:inline define:vars={{ conversations }}>
+  var DATA = { conversations: conversations };
+  var activeIdx = null;
+
+  function renderList() {
+    var search = document.getElementById('search').value.toLowerCase();
+    var filter = document.getElementById('filter').value;
+    var list = document.getElementById('conv-list');
+    var html = '';
+
+    for (var i = 0; i < DATA.conversations.length; i++) {
+      var c = DATA.conversations[i];
+      if (filter === 'patient' && !c.isPatientEncounter) continue;
+      if (filter === 'other' && c.isPatientEncounter) continue;
+
+      var haystack = (c.title + ' ' + c.messages.map(function(m) { return m.content; }).join(' ')).toLowerCase();
+      if (search && haystack.indexOf(search) === -1) continue;
+
+      var demo = '';
+      if (c.patientInfo) {
+        demo = (c.patientInfo.age || '?') + (c.patientInfo.gender ? c.patientInfo.gender.charAt(0).toUpperCase() : '');
+      }
+      var badge = c.isPatientEncounter ? 'Patient' : 'Other';
+      var badgeClass = c.isPatientEncounter ? 'badge-patient' : 'badge-other';
+      var activeClass = activeIdx === c.idx ? ' active' : '';
+
+      html += '<div class="conv-item' + activeClass + '" data-idx="' + c.idx + '">' +
+        '<div class="title">' + esc(c.title.substring(0, 100)) + '</div>' +
+        '<div class="meta">' +
+          (demo ? '<span>' + demo + '</span>' : '') +
+          '<span>' + c.messageCount + ' msgs</span>' +
+          '<span class="badge ' + badgeClass + '">' + badge + '</span>' +
+        '</div></div>';
+    }
+
+    list.innerHTML = html || '<div style="padding:2em;text-align:center;color:var(--muted)">No conversations match</div>';
+  }
+
+  function selectConv(idx) {
+    activeIdx = idx;
+    var conv = null;
+    for (var i = 0; i < DATA.conversations.length; i++) {
+      if (DATA.conversations[i].idx === idx) { conv = DATA.conversations[i]; break; }
+    }
+    if (!conv) return;
+
+    renderList();
+
+    var h = '<h3>' + esc(conv.title.substring(0, 150)) + '</h3>';
+    if (conv.isPatientEncounter && conv.patientInfo) {
+      var parts = [];
+      if (conv.patientInfo.age) parts.push(conv.patientInfo.age + 'yr');
+      if (conv.patientInfo.gender) parts.push(conv.patientInfo.gender);
+      if (conv.patientInfo.complaint) parts.push(conv.patientInfo.complaint.substring(0, 80));
+      h += '<div class="patient-tag">🏥 ' + parts.join(' — ') + '</div>';
+    }
+    h += '<div class="meta-line">' + conv.messageCount + ' messages · Score: ' + conv.classificationScore + '</div>';
+    document.getElementById('main-header').innerHTML = h;
+
+    var msgsHtml = '';
+    for (var i = 0; i < conv.messages.length; i++) {
+      var m = conv.messages[i];
+      var isUser = m.role === 'user';
+      var msgClass = isUser ? 'msg-user' : 'msg-assistant';
+      var label = isUser ? '🧑 You' : '🤖 Copilot';
+      var isLong = m.content.length > 600;
+      var msgId = 'msg-' + idx + '-' + i;
+
+      msgsHtml += '<div class="msg ' + msgClass + '">' +
+        '<div class="msg-header">' + label + ' · ' + (i+1) + '/' + conv.messages.length + ' · ' + fmt(m.content.length) + '</div>' +
+        '<div id="' + msgId + '" class="msg-content' + (isLong ? ' collapsed' : '') + '">' + esc(m.content) + '</div>' +
+        (isLong ? '<div class="msg-expand" data-msg-id="' + msgId + '">▼ Show full message (' + fmt(m.content.length) + ')</div>' : '') +
+        '</div>';
+    }
+    document.getElementById('messages').innerHTML = msgsHtml;
+    document.getElementById('messages').scrollTop = 0;
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function fmt(n) {
+    if (n < 500) return n + ' chars';
+    return (n / 1000).toFixed(1) + 'k chars';
+  }
+
+  document.getElementById('conv-list').addEventListener('click', function(e) {
+    var item = e.target.closest('.conv-item');
+    if (!item) return;
+    var idx = parseInt(item.getAttribute('data-idx'), 10);
+    if (!isNaN(idx)) selectConv(idx);
+  });
+
+  document.getElementById('messages').addEventListener('click', function(e) {
+    var btn = e.target.closest('.msg-expand');
+    if (!btn) return;
+    var msgId = btn.getAttribute('data-msg-id');
+    var el = document.getElementById(msgId);
+    if (el) { el.classList.remove('collapsed'); btn.style.display = 'none'; }
+  });
+
+  document.getElementById('search').addEventListener('input', renderList);
+  document.getElementById('filter').addEventListener('change', renderList);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      activeIdx = null;
+      renderList();
+      document.getElementById('main-header').innerHTML = '<h3>Select a conversation</h3>';
+      document.getElementById('messages').innerHTML = '<div id="empty-state">← Select a conversation from the sidebar</div>';
+    }
+  });
+
+  renderList();
+</script>

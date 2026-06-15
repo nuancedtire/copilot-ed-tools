@@ -1,0 +1,30 @@
+{
+  "name": "copilot-ed-tools",
+  "version": "1.0.0",
+  "description": "A lightweight browser extension that brings clinical documentation assistance directly into Microsoft Copilot. Built for ED clinicians who want RCEM-compliant, coroner-defensible clerkings and discharge summaries without leaving their workflow.",
+  "main": "content.js",
+  "scripts": {
+    "auth": "node tests/auth-headless.js",
+    "auth:headed": "node tests/auth.js",
+    "auth:fresh": "node tests/auth-headless.js --fresh",
+    "smoke": "node tests/smoke-test.js",
+    "test": "npx playwright test --config=tests/playwright.config.js",
+    "test:headed": "npx playwright test --config=tests/playwright.config.js --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nuancedtire/copilot-ed-tools.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nuancedtire/copilot-ed-tools/issues"
+  },
+  "homepage": "https://github.com/nuancedtire/copilot-ed-tools#readme",
+  "dependencies": {
+    "@playwright/test": "^1.60.0",
+    "playwright": "^1.60.0"
+  }
+}
